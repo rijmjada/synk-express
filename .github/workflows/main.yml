@@ -7,25 +7,34 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out code
-      uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v4
+        
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Run Snyk to check for vulnerabilities
-      id: snyk
-      continue-on-error: true
-      uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --all-projects --severity-threshold=high --json > snyk_report.json
+      - name: Install dependencies
+        run: npm install
 
-    - name: Archive vulnerability report
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: snyk_report
-        path: snyk_report.json
+      - name: Run Snyk to check for vulnerabilities
+        id: snyk
+        continue-on-error: true
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --severity-threshold=high --json > snyk_report.json
 
-    - name: Fail on vulnerability
-      if: steps.snyk.outcome == 'failure'
-      run: exit 1
+      - name: Archive vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: snyk_report
+          path: snyk_report.json
+          
+      - name: Fail on vulnerability
+        if: steps.snyk.outcome == 'failure'
+        run: exit 1
+
